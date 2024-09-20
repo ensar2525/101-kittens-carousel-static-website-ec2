@@ -1,7 +1,77 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Description: |
+  This CloudFormation Template
 
+Parameters:
+  İmageID:
+    Type: 'AWS::SSM::Parameter::Value-AWS::EC2::İmage::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64'
+
+  İnstanceType: 
+    Description: Select your instance type.  
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+      - t2.NANO
+
+  myKeyName:
+   Description: Select your instance type.
+   Type: AWS::EC2::KeyPair::KeyName
+
+  tagKeyParam: 
+    Description: Select your instance type.  
+    Type: String
+    NoEcho: true
 Resources:
-        
+
+  myWebServer:
+    Type: AWS::EC2::İnstance
+  Properties:
+    İmageld:  !Ref İmageID
+    İnstanceType: !Ref İnstanceType
+    Keyname: !Ref myKeyname
+    SecurityGroupIds:
+      !Ref mySecGrp     #!GetAtt mySecGrp.GroupId   
+    Tags:
+      - Key: !Ref tagKeyParam
+      - Value: !Sub ${AWS::StackName}
+    UserData: !Base64 |    
+      #! /bin/bash
+      dnf update -y
+      dnf install httpd -y
+      FOLDER="https://raw.githubusercontent.com/ensar2525/101-kittens-carousel-static-website-ec2/main/static-web"
+      cd /var/www/html
+      wget $ {FOLDER}/index.html
+      wget $ {FOLDER}/cat0.jpg
+      wget $ {FOLDER}/cat1.jpg
+      wget $ {FOLDER}/cat2.jpg
+      wget $ {FOLDER}/cat2.png
+      systemctl start httpd
+      systemctl enable httpd
+
+
+  mySecGrp:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: shh and http #Required
+      GroupName: ensar_kitten_101_sg_grp
+      SecurityGroupIngress:  
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+ 
 Outputs:
+  WebSiteURL:
+    Description: URL of website
+    Value:  !Sub
+      - http://$(PublicDNS)
+      - PublicDNS: !GetAtt myWebServer.PublicDnsName 
+
